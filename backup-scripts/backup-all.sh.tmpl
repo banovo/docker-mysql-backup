@@ -23,32 +23,30 @@
 
 {{ range $host, $containers := groupByMulti $ "Labels.mysql-backup" "," }}
 {{ range $container := $containers }}
-	{{ $addrLen := len $container.Addresses }}
-	{{ range $knownNetwork := $CurrentContainer.Networks }}
-		{{ range $containerNetwork := $container.Networks }}
-			{{ if eq $knownNetwork.Name $containerNetwork.Name }}
-				{{ if eq $addrLen 1 }}
-					{{ $address := index $container.Addresses 0 }}
-					{{ if $address }}
-						{{ if and $container.Node.ID $address.HostPort }}
-							{{ $IP := $container.Node.Address.IP }}
-							{{ $Port := $address.HostPort}}
+    {{ $addrLen := len $container.Addresses }}
+    {{ range $knownNetwork := $CurrentContainer.Networks }}
+        {{ range $containerNetwork := $container.Networks }}
+            {{ if eq $knownNetwork.Name $containerNetwork.Name }}
+                {{ if eq $addrLen 1 }}
+                    {{ $address := index $container.Addresses 0 }}
+                    {{ if $address }}
+                        {{ if and $container.Node.ID $address.HostPort }}
+                            {{ $IP := $container.Node.Address.IP }}
+                            {{ $Port := $address.HostPort}}
                             {{ template "backup_script" (dict "Container" $container "IP" $IP "Port" $Port "Comment" "Using host IP:PORT (e.g swarm)") }}
-						{{ else if $containerNetwork }}
-							{{ $IP := $containerNetwork.IP }}
-							{{ $Port := $address.Port}}
+                        {{ else if $containerNetwork }}
+                            {{ $IP := $containerNetwork.IP }}
+                            {{ $Port := 3306 }}
                             {{ template "backup_script" (dict "Container" $container "IP" $IP "Port" $Port "Comment" "Using containers Network IP:PORT (e.g compose)") }}
-						{{ end }}
-					{{ else if $containerNetwork }}
-						{{ $IP := $containerNetwork.IP }}
-						{{ $Port := 3306 }}
-                        {{ template "backup_script" (dict "Container" $container "IP" $IP "Port" $Port "Comment" "Using fallback to Network IP:3306") }}
-					{{ end }}
-				{{ else }}
-                        {{ template "backup_script" (dict "Container" $container "IP" "" "Port" "" "Comment" "TODO - More than one Network-Adresses detected") }}
-				{{ end }}{{/* if only one network-adress */}}
-			{{ end }}{{/* if same network */}}
-		{{ end }}{{/* range container networks */}}
-	{{ end }}{{/* range currentContainer networks */}}
+                        {{ end }}
+                    {{ end }}
+                {{ else }}
+                    {{ $IP := $container.Name }}
+                    {{ $Port := 3306 }}
+                    {{ template "backup_script" (dict "Container" $container "IP" $IP "Port" $Port "Comment" "More than one Network-Adresses detected: Fallback to container_name!!!!") }}
+                {{ end }}{{/* if only one network-adress */}}
+            {{ end }}{{/* if same network */}}
+        {{ end }}{{/* range container networks */}}
+    {{ end }}{{/* range currentContainer networks */}}
 {{ end }}{{/* range containers */}}
 {{ end }}{{/* range labels */}}
